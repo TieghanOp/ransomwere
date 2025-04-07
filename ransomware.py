@@ -1,10 +1,11 @@
-import ctypes
-import sys
 from tkinter import messagebox, Tk, Button
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import base64
 import os
+import ctypes
+import sys
+
 
 def is_admin():
     try:
@@ -12,12 +13,24 @@ def is_admin():
     except:
         return False
 
-if not is_admin():
-    ctypes.windll.shell32.ShellExecuteW(
-        None, "runas", sys.executable, " ".join(sys.argv), None, 1
-    )
-    sys.exit()
+def run_as_admin():
+    script = sys.argv[0]
+    params = " ".join([f'"{arg}"' for arg in sys.argv[1:]])
+    try:
+        ctypes.windll.shell32.ShellExecuteW(
+            None, "runas", sys.executable, f'"{script}" {params}', None, 1
+        )
+    except Exception as e:
+        print("Failed to elevate:", e)
 
+if __name__ == "__main__":
+    if not is_admin():
+        print("Not running as admin. Elevating...")
+        run_as_admin()
+        sys.exit()
+    
+    print("Running as administrator.")
+    
 password = "password"
 
 def derive_key(password):
@@ -67,10 +80,10 @@ def decrypt_localuser():
 root = Tk()
 root.title("File Encryptor/Decryptor")
 
-encrypt_button = Button(root, text="Encrypt All in %localuser%", command=encrypt_localuser)
+encrypt_button = Button(root, text="Encrypt All in %USERPROFILE%", command=encrypt_localuser)
 encrypt_button.pack(pady=10)
 
-decrypt_button = Button(root, text="Decrypt All in %localuser%", command=decrypt_localuser)
+decrypt_button = Button(root, text="Decrypt All in %USERPROFILE%", command=decrypt_localuser)
 decrypt_button.pack(pady=10)
 
 root.mainloop()
