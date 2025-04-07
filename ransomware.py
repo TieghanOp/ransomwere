@@ -1,12 +1,15 @@
-import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, Tk, Button
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import base64
 
+password = "password"
+
 def derive_key(password):
     kdf = Scrypt(salt=b"", length=32, n=2**14, r=8, p=1)
     return base64.urlsafe_b64encode(kdf.derive(password.encode()))
+
+key = derive_key(password)
 
 def encrypt(filename, key):
     try:
@@ -32,35 +35,23 @@ def decrypt(filename, key):
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
 
-def choose_file():
+def choose_file_and_encrypt():
     file_path = filedialog.askopenfilename()
-    return file_path
+    if file_path:
+        encrypt(file_path, key)
 
-def handle_encrypt():
-    filename = choose_file()
-    if filename:
-        password = password_entry.get()
-        key = derive_key(password)
-        encrypt(filename, key)
+def choose_file_and_decrypt():
+    file_path = filedialog.askopenfilename()
+    if file_path:
+        decrypt(file_path, key)
 
-def handle_decrypt():
-    filename = choose_file()
-    if filename:
-        password = password_entry.get()
-        key = derive_key(password)
-        decrypt(filename, key)
-
-root = tk.Tk()
+root = Tk()
 root.title("File Encryptor/Decryptor")
 
-tk.Label(root, text="Password:").grid(row=0, column=0, padx=10, pady=10)
-password_entry = tk.Entry(root, show="*", width=30)
-password_entry.grid(row=0, column=1, padx=10, pady=10)
+encrypt_button = Button(root, text="Encrypt File", command=choose_file_and_encrypt)
+encrypt_button.pack(pady=10)
 
-encrypt_button = tk.Button(root, text="Encrypt File", command=handle_encrypt)
-encrypt_button.grid(row=1, column=0, padx=10, pady=10)
-
-decrypt_button = tk.Button(root, text="Decrypt File", command=handle_decrypt)
-decrypt_button.grid(row=1, column=1, padx=10, pady=10)
+decrypt_button = Button(root, text="Decrypt File", command=choose_file_and_decrypt)
+decrypt_button.pack(pady=10)
 
 root.mainloop()
