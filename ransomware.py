@@ -67,6 +67,9 @@ def decrypt_desktop():
 root = Tk()
 root.title("File Encryptor/Decryptor")
 
+# Set window size explicitly to ensure visibility
+root.geometry("300x150")  # Adjust the width and height as needed
+
 encrypt_button = Button(root, text="Encrypt All in Desktop", command=encrypt_desktop)
 encrypt_button.pack(pady=10)
 
