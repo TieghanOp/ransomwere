@@ -56,21 +56,21 @@ def decrypt_directory(directory, key):
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
 
-def encrypt_userprofile():
-    userprofile_path = os.environ["USERPROFILE"]  # This retrieves the %USERPROFILE% path
-    encrypt_directory(userprofile_path, key)
+def encrypt_desktop():
+    desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")  # Desktop path
+    encrypt_directory(desktop_path, key)
 
-def decrypt_userprofile():
-    userprofile_path = os.environ["USERPROFILE"]  # This retrieves the %USERPROFILE% path
-    decrypt_directory(userprofile_path, key)
+def decrypt_desktop():
+    desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")  # Desktop path
+    decrypt_directory(desktop_path, key)
 
 root = Tk()
 root.title("File Encryptor/Decryptor")
 
-encrypt_button = Button(root, text="Encrypt All in %USERPROFILE%", command=encrypt_userprofile)
+encrypt_button = Button(root, text="Encrypt All in Desktop", command=encrypt_desktop)
 encrypt_button.pack(pady=10)
 
-decrypt_button = Button(root, text="Decrypt All in %USERPROFILE%", command=decrypt_userprofile)
+decrypt_button = Button(root, text="Decrypt All in Desktop", command=decrypt_desktop)
 decrypt_button.pack(pady=10)
 
 root.mainloop()
