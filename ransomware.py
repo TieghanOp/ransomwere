@@ -18,10 +18,13 @@ if not is_admin():
     )
     sys.exit()
 
+# Generate a random salt
+SALT = b"your_random_salt_here"  # Replace with securely stored salt
+
 password = "password"
 
 def derive_key(password):
-    kdf = Scrypt(salt=b"", length=32, n=2**14, r=8, p=1)
+    kdf = Scrypt(salt=SALT, length=32, n=2**14, r=8, p=1)
     return base64.urlsafe_b64encode(kdf.derive(password.encode()))
 
 key = derive_key(password)
@@ -30,22 +33,7 @@ def validate_password(input_password):
     """Check if the provided password is correct."""
     return derive_key(input_password) == key
 
-def simplify_enc_extensions(directory):
-    """
-    Ensures files only have a single `.enc` extension in the specified directory.
-    """
-    for root, _, files in os.walk(directory):
-        for file in files:
-            if file.endswith(".enc"):
-                filepath = os.path.join(root, file)
-                simplified_filepath = filepath
-                while simplified_filepath.endswith(".enc.enc"):
-                    simplified_filepath = simplified_filepath[:-4]
-                if simplified_filepath != filepath:
-                    os.rename(filepath, simplified_filepath)
-                    print(f"Renamed: {filepath} -> {simplified_filepath}")
-
-def encrypt_directory(directory, key, chunk_size=1024 * 1024):
+def encrypt_directory(directory, key):
     try:
         f = Fernet(key)
         for root, _, files in os.walk(directory):
@@ -58,17 +46,17 @@ def encrypt_directory(directory, key, chunk_size=1024 * 1024):
                 encrypted_filepath = filepath + ".enc"
 
                 try:
-                    with open(filepath, "rb") as file_obj, open(encrypted_filepath, "wb") as enc_file:
-                        while chunk := file_obj.read(chunk_size):
-                            encrypted_data = f.encrypt(chunk)
-                            enc_file.write(encrypted_data)
+                    with open(filepath, "rb") as file_obj:
+                        data = file_obj.read()
+                    encrypted_data = f.encrypt(data)
+                    with open(encrypted_filepath, "wb") as enc_file:
+                        enc_file.write(encrypted_data)
 
                     os.remove(filepath)
                     print(f"Encrypted: {filepath}")
                 except Exception as e:
                     print(f"Failed to encrypt {filepath}: {e}")
 
-        simplify_enc_extensions(directory)
         messagebox.showinfo("Success", "All files encrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Encryption failed: {e}")
@@ -84,23 +72,38 @@ def decrypt_directory(directory, key):
             return
         
         f = Fernet(key)
-        for root, _, files in os.walk(directory):
-            for file in files:
-                if not file.endswith(".enc"):
-                    continue
-                filepath = os.path.join(root, file)
-                try:
-                    with open(filepath, "rb") as file_obj:
-                        encrypted_data = file_obj.read()
-                    decrypted_data = f.decrypt(encrypted_data)
-                    decrypted_filepath = filepath[:-4]
-                    with open(decrypted_filepath, "wb") as file_obj:
-                        file_obj.write(decrypted_data)
-                    os.remove(filepath)
-                except Exception as e:
-                    print(f"Failed to decrypt {filepath}: {e}")
+        log_file_path = os.path.join(directory, "decryption_log.txt")  # Log file for decrypted files
+        with open(log_file_path, "w") as log_file:
+            for root, _, files in os.walk(directory):
+                for file in files:
+                    if not file.endswith(".enc"):
+                        continue
+                    filepath = os.path.join(root, file)
+                    try:
+                        # Read the encrypted file
+                        with open(filepath, "rb") as file_obj:
+                            encrypted_data = file_obj.read()
+                        
+                        # Decrypt the data
+                        decrypted_data = f.decrypt(encrypted_data)
+                        
+                        # Create the new filepath by removing the ".enc" extension
+                        decrypted_filepath = filepath.rsplit(".enc", 1)[0]
+                        
+                        # Save the decrypted data to the new file
+                        with open(decrypted_filepath, "wb") as file_obj:
+                            file_obj.write(decrypted_data)
+                        
+                        # Log the decrypted file
+                        log_file.write(f"Decrypted: {decrypted_filepath}\n")
+                        
+                        # Remove the old .enc file
+                        os.remove(filepath)
+                        print(f"Decrypted and removed .enc: {filepath}")
+                    except Exception as e:
+                        print(f"Failed to decrypt {filepath}: {e}")
         
-        messagebox.showinfo("Success", "Decryption completed successfully!")
+        messagebox.showinfo("Success", f"Decryption completed successfully! Log file: {log_file_path}")
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
 
