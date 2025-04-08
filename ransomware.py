@@ -18,20 +18,22 @@ if not is_admin():
     )
     sys.exit()
 
-SALT = b"your_random_salt_here"
-
-password = "password"
+SALT = b"password"
+PASSWORD = "password"
 
 def derive_key(password):
-    kdf = Scrypt(salt=SALT, length=32, n=2**14, r=8, p=1)
-    return base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    try:
+        kdf = Scrypt(salt=SALT, length=32, n=2**14, r=8, p=1)
+        return base64.urlsafe_b64encode(kdf.derive(password.encode()))
+    except Exception as e:
+        print(f"Error deriving key: {e}")
+        raise
 
-key = derive_key(password)
+KEY = derive_key(PASSWORD)
 
 def validate_password(input_password):
-    """Check if the provided password is correct."""
     try:
-        return derive_key(input_password) == key
+        return derive_key(input_password) == KEY
     except Exception as e:
         print(f"Validation error: {e}")
         return False
@@ -83,22 +85,20 @@ def decrypt_directory(directory, key):
                         continue
                     filepath = os.path.join(root, file)
                     try:
-                        print(f"Processing file: {filepath}")
                         with open(filepath, "rb") as file_obj:
                             encrypted_data = file_obj.read()
 
                         decrypted_data = f.decrypt(encrypted_data)
-
                         decrypted_filepath = filepath.rsplit(".enc", 1)[0]
                         
                         with open(decrypted_filepath, "wb") as file_obj:
                             file_obj.write(decrypted_data)
                         
                         log_file.write(f"Decrypted: {decrypted_filepath}\n")
-                        
                         os.remove(filepath)
                         print(f"Successfully decrypted and removed: {filepath}")
                     except Exception as e:
+                        log_file.write(f"Failed to decrypt {filepath}: {e}\n")
                         print(f"Failed to decrypt {filepath}: {e}")
         
         messagebox.showinfo("Success", f"Decryption completed successfully! Log file: {log_file_path}")
@@ -107,18 +107,17 @@ def decrypt_directory(directory, key):
 
 def encrypt_desktop():
     desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")
-    encrypt_directory(desktop_path, key)
+    encrypt_directory(desktop_path, KEY)
 
 def decrypt_desktop():
     desktop_path = os.path.join(os.environ["USERPROFILE"], "Desktop")
-    decrypt_directory(desktop_path, key)
+    decrypt_directory(desktop_path, KEY)
 
 if __name__ == "__main__":
     print("Starting File Encryptor/Decryptor...")
 
     root = Tk()
     root.title("File Encryptor/Decryptor")
-
     root.geometry("300x150")
 
     decrypt_button = Button(root, text="Decrypt All in Desktop", command=decrypt_desktop)
