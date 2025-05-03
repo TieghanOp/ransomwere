@@ -4,8 +4,8 @@ from cryptography.fernet import Fernet
 import base64
 import os
 
-SALT = b"TbhukHlLofdlONlslJwpqmdImwL"
-PASSWORD = "TbhukHlLofdlONlslJwpqmdImwL"
+SALT = b"password"
+PASSWORD = "password"
 
 def derive_key(password):
     try:
